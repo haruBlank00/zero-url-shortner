@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(uuid())
+
+  email String @unique
+
+  password String
+
+  isActive Boolean @default(true)
+
+  tokens AuthToken[] @relation("UserTokens")
+
+  shortUrls ShortUrl[] @relation("UserUrls")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuthToken {
+  id String @id @default(uuid())
+
+  user   User   @relation("UserTokens", fields: [userId], references: [id])
+  userId String
+
+  token String
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([token])
+  @@index([userId])
+}
+
+model ShortUrl {
+  id String @id @default(uuid())
+
+  longUrl String
+
+  slug String @unique
+
+  title String?
+
+  isActive  Boolean   @default(true)
+  expiresAt DateTime?
+
+  user   User   @relation("UserUrls", fields: [userId], references: [id])
+  userId String
+
+  clicks Click[] @relation("ShortUrlClicks")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Click {
+  id String @id @default(uuid())
+
+  shortUrlId String
+
+  shortUrl ShortUrl @relation("ShortUrlClicks", fields: [shortUrlId], references: [id])
+
+  ipAddress String
+
+  userAgent String
+
+  referrer String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
